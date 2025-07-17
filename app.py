@@ -39,6 +39,16 @@ class SearchRequest(BaseModel):
     query: str
     symbol_type: Optional[str] = None
 
+class WebSearchRequest(BaseModel):
+    query: str
+    num_results: int = 10
+    provider: Optional[str] = None
+    include_content: bool = False
+
+class UrlScrapeRequest(BaseModel):
+    url: str
+    use_cache: bool = True
+
 # Initialize FastAPI app
 app = FastAPI(title="MCP AI Coding Agent", version="1.0.0")
 
@@ -308,6 +318,50 @@ async def get_conversation_stats():
 async def get_conversation_summary():
     """Get conversation summary"""
     return await agent.summarize_conversation()
+
+@app.post("/api/web-search")
+async def web_search(request: WebSearchRequest):
+    """Perform web search"""
+    return await agent.web_search(
+        request.query,
+        request.num_results,
+        request.provider,
+        request.include_content
+    )
+
+@app.post("/api/scrape-url")
+async def scrape_url(request: UrlScrapeRequest):
+    """Scrape content from URL"""
+    return await agent.scrape_url(request.url, request.use_cache)
+
+@app.post("/api/search-and-summarize")
+async def search_and_summarize(request: WebSearchRequest):
+    """Search web and provide summary"""
+    return await agent.search_and_summarize(
+        request.query,
+        request.num_results,
+        request.provider
+    )
+
+@app.get("/api/web-search-providers")
+async def get_web_search_providers():
+    """Get available web search providers"""
+    return {"providers": agent.get_web_search_providers()}
+
+@app.get("/api/web-cache-stats")
+async def get_web_cache_stats():
+    """Get web scraping cache statistics"""
+    return agent.get_web_cache_stats()
+
+@app.post("/api/moonshot-web-search")
+async def moonshot_web_search(request: WebSearchRequest):
+    """Use Moonshot Kimi's web search"""
+    return await agent.moonshot_web_search(request.query, request.num_results)
+
+@app.post("/api/moonshot-analyze-url")
+async def moonshot_analyze_url(request: UrlScrapeRequest):
+    """Use Moonshot Kimi to analyze URL"""
+    return await agent.moonshot_analyze_url(request.url)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")

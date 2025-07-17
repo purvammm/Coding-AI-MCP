@@ -3,13 +3,15 @@ from typing import Dict, List, Optional, AsyncGenerator, Any
 from datetime import datetime
 
 from config import Config, ModelConfig
-from models import ModelProvider, OllamaProvider, HuggingFaceProvider, GroqProvider, TogetherProvider
+from models import ModelProvider, OllamaProvider, HuggingFaceProvider, GroqProvider, TogetherProvider, MoonshotProvider
 from models.base import ChatMessage, ModelResponse
 from .file_manager import FileManager
 from .terminal_manager import TerminalManager
 from .project_indexer import ProjectIndexer
 from .attachment_manager import AttachmentManager, AttachmentContext
 from .context_manager import ContextManager
+from .web_scraper import WebScraper, WebContent
+from .web_search import WebSearchEngine, SearchResult
 
 class MCPAgent:
     """Main MCP AI Coding Agent"""
@@ -23,6 +25,8 @@ class MCPAgent:
         self.project_indexer = ProjectIndexer(workspace_path)
         self.attachment_manager = AttachmentManager(workspace_path)
         self.context_manager = ContextManager()
+        self.web_scraper = WebScraper()
+        self.web_search = WebSearchEngine(self.web_scraper)
         
         # Initialize model providers
         self.providers: Dict[str, ModelProvider] = {}
@@ -46,6 +50,17 @@ class MCPAgent:
         
         if Config.TOGETHER_API_KEY:
             self.providers['together'] = TogetherProvider(Config.TOGETHER_API_KEY)
+
+        if Config.MOONSHOT_API_KEY:
+            self.providers['moonshot'] = MoonshotProvider(Config.MOONSHOT_API_KEY)
+
+        # Configure web search APIs
+        self.web_search.configure_apis(
+            bing_api_key=Config.BING_SEARCH_API_KEY,
+            serper_api_key=Config.SERPER_API_KEY,
+            google_cse_id=Config.GOOGLE_CSE_ID,
+            google_api_key=Config.GOOGLE_API_KEY
+        )
     
     async def initialize(self):
         """Initialize the agent and build project index"""
@@ -450,3 +465,131 @@ class MCPAgent:
             "key_points": context_window.key_points,
             "summary": context_window.summary
         }
+
+    async def web_search(
+        self,
+        query: str,
+        num_results: int = 10,
+        provider: str = None,
+        include_content: bool = False
+    ) -> Dict[str, Any]:
+        """Perform web search"""
+        if not Config.WEB_SCRAPING_ENABLED:
+            return {"success": False, "error": "Web scraping is disabled"}
+
+        try:
+            if provider is None:
+                provider = Config.DEFAULT_SEARCH_PROVIDER
+
+            results = await self.web_search.search(
+                query, num_results, provider, include_content
+            )
+
+            return {
+                "success": True,
+                "query": query,
+                "provider": provider,
+                "results_count": len(results),
+                "results": [
+                    {
+                        "title": r.title,
+                        "url": r.url,
+                        "snippet": r.snippet,
+                        "relevance_score": r.relevance_score,
+                        "source": r.source
+                    }
+                    for r in results
+                ]
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def scrape_url(self, url: str, use_cache: bool = True) -> Dict[str, Any]:
+        """Scrape content from a URL"""
+        if not Config.WEB_SCRAPING_ENABLED:
+            return {"success": False, "error": "Web scraping is disabled"}
+
+        try:
+            web_content = await self.web_scraper.scrape_url(url, use_cache)
+
+            if web_content:
+                return {
+                    "success": True,
+                    "url": web_content.url,
+                    "title": web_content.title,
+                    "content": web_content.content,
+                    "summary": web_content.summary,
+                    "word_count": web_content.word_count,
+                    "scraped_at": web_content.scraped_at.isoformat(),
+                    "metadata": web_content.metadata,
+                    "links": web_content.links,
+                    "images": web_content.images
+                }
+            else:
+                return {"success": False, "error": "Failed to scrape URL"}
+
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def search_and_summarize(
+        self,
+        query: str,
+        num_results: int = 5,
+        provider: str = None
+    ) -> Dict[str, Any]:
+        """Search web and provide comprehensive summary"""
+        if not Config.WEB_SCRAPING_ENABLED:
+            return {"success": False, "error": "Web scraping is disabled"}
+
+        try:
+            if provider is None:
+                provider = Config.DEFAULT_SEARCH_PROVIDER
+
+            summary_data = await self.web_search.search_and_summarize(
+                query, num_results, provider
+            )
+
+            return {"success": True, **summary_data}
+
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_web_search_providers(self) -> List[str]:
+        """Get available web search providers"""
+        return self.web_search.get_available_providers()
+
+    def get_web_cache_stats(self) -> Dict[str, Any]:
+        """Get web scraping cache statistics"""
+        return self.web_scraper.get_cache_stats()
+
+    async def moonshot_web_search(self, query: str, num_results: int = 5) -> Dict[str, Any]:
+        """Use Moonshot Kimi's built-in web search capabilities"""
+        if 'moonshot' not in self.providers:
+            return {"success": False, "error": "Moonshot provider not available"}
+
+        try:
+            moonshot_provider = self.providers['moonshot']
+            results = await moonshot_provider.web_search(query, num_results)
+
+            return {
+                "success": True,
+                "query": query,
+                "provider": "moonshot",
+                "results_count": len(results),
+                "results": results
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def moonshot_analyze_url(self, url: str) -> Dict[str, Any]:
+        """Use Moonshot Kimi to analyze URL content"""
+        if 'moonshot' not in self.providers:
+            return {"success": False, "error": "Moonshot provider not available"}
+
+        try:
+            moonshot_provider = self.providers['moonshot']
+            analysis = await moonshot_provider.analyze_url(url)
+
+            return {"success": True, **analysis}
+        except Exception as e:
+            return {"success": False, "error": str(e)}

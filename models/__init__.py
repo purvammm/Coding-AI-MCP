@@ -3,6 +3,7 @@ from .ollama import OllamaProvider
 from .huggingface import HuggingFaceProvider
 from .groq import GroqProvider
 from .together import TogetherProvider
+from .moonshot import MoonshotProvider
 
 __all__ = [
     'ModelProvider',
@@ -10,4 +11,5 @@ __all__ = [
     'HuggingFaceProvider',
     'GroqProvider',
     'TogetherProvider',
+    'MoonshotProvider',
 ]

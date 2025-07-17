@@ -165,6 +165,17 @@ These models are accessed through API providers:
 | Together AI | CodeLlama 34B, Llama 3 | Yes |
 | Hugging Face | Qwen2.5-Coder, DeepSeek Coder | Yes |
 | Replicate | Various models | Yes |
+| Moonshot Kimi | v1 8K, v1 32K, v1 128K | Yes |
+
+### Moonshot Kimi (Agentic AI)
+
+Moonshot Kimi provides advanced agentic AI capabilities with built-in web search:
+
+| Model | Context | Features |
+|-------|---------|----------|
+| moonshot-v1-8k | 8K tokens | Basic agentic capabilities |
+| moonshot-v1-32k | 32K tokens | Extended context |
+| moonshot-v1-128k | 128K tokens | Ultra-long context + web search |
 
 ### Installing Local Models
 
@@ -203,6 +214,13 @@ The MCP AI Coding Agent provides a REST API and WebSocket API for integration wi
 | `/api/running-processes` | GET | Get running processes |
 | `/api/kill-process/{pid}` | POST | Kill a running process |
 | `/api/rebuild-index` | POST | Rebuild project index |
+| `/api/web-search` | POST | Perform web search |
+| `/api/scrape-url` | POST | Scrape content from URL |
+| `/api/search-and-summarize` | POST | Search web and provide summary |
+| `/api/web-search-providers` | GET | Get available search providers |
+| `/api/web-cache-stats` | GET | Get web scraping cache stats |
+| `/api/moonshot-web-search` | POST | Use Moonshot's web search |
+| `/api/moonshot-analyze-url` | POST | Use Moonshot to analyze URL |
 
 ### WebSocket API
 

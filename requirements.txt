@@ -38,3 +38,17 @@ python-magic==0.4.27
 tiktoken==0.5.2
 sentence-transformers==2.2.2
 numpy==1.24.3
+# Web scraping and search
+beautifulsoup4==4.12.2
+selenium==4.15.0
+scrapy==2.11.0
+lxml==4.9.3
+html2text==2020.1.16
+readability-lxml==0.8.1
+newspaper3k==0.2.8
+# Search engines
+googlesearch-python==1.2.3
+duckduckgo-search==3.9.6
+# HTTP clients
+httpx==0.25.2
+aiohttp==3.9.1

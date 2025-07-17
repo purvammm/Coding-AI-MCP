@@ -148,6 +148,35 @@ class Config:
             api_key_env="HUGGINGFACE_API_KEY",
             description="Alibaba's Qwen2.5-Coder 32B via Hugging Face"
         ),
+
+        # Moonshot Kimi models
+        ModelConfig(
+            name="Moonshot Kimi v1 8K",
+            provider="moonshot",
+            model_id="moonshot-v1-8k",
+            max_tokens=8192,
+            requires_api_key=True,
+            api_key_env="MOONSHOT_API_KEY",
+            description="Moonshot Kimi v1 8K - Agentic AI with web search capabilities"
+        ),
+        ModelConfig(
+            name="Moonshot Kimi v1 32K",
+            provider="moonshot",
+            model_id="moonshot-v1-32k",
+            max_tokens=32768,
+            requires_api_key=True,
+            api_key_env="MOONSHOT_API_KEY",
+            description="Moonshot Kimi v1 32K - Extended context agentic AI"
+        ),
+        ModelConfig(
+            name="Moonshot Kimi v1 128K",
+            provider="moonshot",
+            model_id="moonshot-v1-128k",
+            max_tokens=131072,
+            requires_api_key=True,
+            api_key_env="MOONSHOT_API_KEY",
+            description="Moonshot Kimi v1 128K - Ultra-long context with web search"
+        ),
     ]
     
     @classmethod
@@ -176,3 +205,16 @@ HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 REPLICATE_API_KEY = os.getenv("REPLICATE_API_KEY")
+MOONSHOT_API_KEY = os.getenv("MOONSHOT_API_KEY")
+
+# Web search API keys
+BING_SEARCH_API_KEY = os.getenv("BING_SEARCH_API_KEY")
+SERPER_API_KEY = os.getenv("SERPER_API_KEY")
+GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
+# Web scraping settings
+WEB_SCRAPING_ENABLED = os.getenv("WEB_SCRAPING_ENABLED", "true").lower() == "true"
+WEB_CACHE_DURATION_HOURS = int(os.getenv("WEB_CACHE_DURATION_HOURS", "24"))
+MAX_CONCURRENT_SCRAPES = int(os.getenv("MAX_CONCURRENT_SCRAPES", "5"))
+DEFAULT_SEARCH_PROVIDER = os.getenv("DEFAULT_SEARCH_PROVIDER", "duckduckgo")

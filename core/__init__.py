@@ -3,6 +3,8 @@ from .terminal_manager import TerminalManager
 from .project_indexer import ProjectIndexer
 from .attachment_manager import AttachmentManager
 from .context_manager import ContextManager
+from .web_scraper import WebScraper
+from .web_search import WebSearchEngine
 from .agent import MCPAgent
 
 __all__ = [
@@ -11,5 +13,7 @@ __all__ = [
     'ProjectIndexer',
     'AttachmentManager',
     'ContextManager',
+    'WebScraper',
+    'WebSearchEngine',
     'MCPAgent',
 ]

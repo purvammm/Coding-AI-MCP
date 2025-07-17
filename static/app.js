@@ -41,6 +41,9 @@ async function initializeApp() {
 
     // Attachment event listeners
     setupAttachmentHandlers();
+
+    // Web search event listeners
+    setupWebSearchHandlers();
 }
 
 // WebSocket connections
@@ -1124,5 +1127,259 @@ async function showConversationStats() {
     } catch (error) {
         console.error('Error showing conversation stats:', error);
         appendSystemMessage('Error loading conversation statistics');
+    }
+}
+
+// Web search functions
+function setupWebSearchHandlers() {
+    const webSearchInput = document.getElementById('web-search-input');
+    const urlScrapeInput = document.getElementById('url-scrape-input');
+
+    // Enter key handlers
+    webSearchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performWebSearch();
+        }
+    });
+
+    urlScrapeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            scrapeUrl();
+        }
+    });
+}
+
+async function performWebSearch() {
+    const query = document.getElementById('web-search-input').value.trim();
+    const provider = document.getElementById('search-provider').value;
+    const numResults = parseInt(document.getElementById('search-results-count').value) || 5;
+
+    if (!query) return;
+
+    try {
+        appendSystemMessage(`🔍 Searching the web for: "${query}"...`);
+
+        const response = await fetch('/api/web-search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                query: query,
+                provider: provider,
+                num_results: numResults,
+                include_content: false
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            displayWebSearchResults(data);
+
+            // Also add to chat as context
+            let searchSummary = `Web search results for "${query}":\n\n`;
+            data.results.forEach((result, index) => {
+                searchSummary += `${index + 1}. **${result.title}**\n`;
+                searchSummary += `   ${result.url}\n`;
+                searchSummary += `   ${result.snippet}\n\n`;
+            });
+
+            appendSystemMessage(searchSummary);
+        } else {
+            appendSystemMessage(`❌ Search failed: ${data.error}`);
+        }
+    } catch (error) {
+        console.error('Web search error:', error);
+        appendSystemMessage('❌ Error performing web search');
+    }
+}
+
+async function scrapeUrl() {
+    const url = document.getElementById('url-scrape-input').value.trim();
+
+    if (!url) return;
+
+    try {
+        appendSystemMessage(`🔗 Scraping content from: ${url}...`);
+
+        const response = await fetch('/api/scrape-url', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                url: url,
+                use_cache: true
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            let content = `## Scraped Content: ${data.title}\n\n`;
+            content += `**URL:** ${data.url}\n`;
+            content += `**Word Count:** ${data.word_count}\n`;
+            content += `**Scraped:** ${new Date(data.scraped_at).toLocaleString()}\n\n`;
+            content += `**Summary:**\n${data.summary}\n\n`;
+
+            if (data.content && data.content.length > 2000) {
+                content += `**Content Preview:**\n\`\`\`\n${data.content.substring(0, 2000)}...\n\`\`\``;
+            } else if (data.content) {
+                content += `**Full Content:**\n\`\`\`\n${data.content}\n\`\`\``;
+            }
+
+            appendSystemMessage(content);
+        } else {
+            appendSystemMessage(`❌ Scraping failed: ${data.error}`);
+        }
+    } catch (error) {
+        console.error('URL scraping error:', error);
+        appendSystemMessage('❌ Error scraping URL');
+    }
+}
+
+function displayWebSearchResults(data) {
+    const resultsContainer = document.getElementById('web-search-results');
+    resultsContainer.innerHTML = '';
+
+    if (!data.results || data.results.length === 0) {
+        resultsContainer.innerHTML = '<div class="alert alert-light py-2">No results found</div>';
+        return;
+    }
+
+    const resultsList = document.createElement('div');
+    resultsList.className = 'list-group';
+
+    data.results.forEach((result, index) => {
+        const item = document.createElement('div');
+        item.className = 'list-group-item py-2';
+
+        item.innerHTML = `
+            <div>
+                <div class="d-flex align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1 text-truncate" title="${result.title}">
+                            ${result.title}
+                        </h6>
+                        <p class="mb-1 small text-muted">${result.snippet}</p>
+                        <small class="text-primary">${result.url}</small>
+                    </div>
+                    <div class="ms-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="scrapeSpecificUrl('${result.url}')" title="Scrape this URL">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        resultsList.appendChild(item);
+    });
+
+    resultsContainer.appendChild(resultsList);
+}
+
+async function scrapeSpecificUrl(url) {
+    document.getElementById('url-scrape-input').value = url;
+    await scrapeUrl();
+}
+
+async function showWebCacheStats() {
+    try {
+        const response = await fetch('/api/web-cache-stats');
+        const data = await response.json();
+
+        let statsHtml = '<div class="list-group">';
+
+        if (data && Object.keys(data).length > 0) {
+            statsHtml += `
+                <div class="list-group-item">
+                    <strong>Web Cache Statistics</strong>
+                </div>
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <span>Cached Items:</span>
+                        <span>${data.cached_items || 0}</span>
+                    </div>
+                </div>
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <span>Cache Duration:</span>
+                        <span>${data.cache_duration_hours || 0} hours</span>
+                    </div>
+                </div>
+            `;
+
+            if (data.oldest_item) {
+                statsHtml += `
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>Oldest Item:</span>
+                            <span>${new Date(data.oldest_item).toLocaleString()}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (data.newest_item) {
+                statsHtml += `
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>Newest Item:</span>
+                            <span>${new Date(data.newest_item).toLocaleString()}</span>
+                        </div>
+                    </div>
+                `;
+            }
+        } else {
+            statsHtml += '<div class="list-group-item">No cache data available</div>';
+        }
+
+        statsHtml += '</div>';
+
+        appendSystemMessage('## Web Cache Statistics\n\n' + statsHtml);
+    } catch (error) {
+        console.error('Error showing web cache stats:', error);
+        appendSystemMessage('Error loading web cache statistics');
+    }
+}
+
+// Enhanced chat with web search integration
+async function performWebSearchAndChat(query) {
+    try {
+        // First perform web search
+        const searchResponse = await fetch('/api/search-and-summarize', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                query: query,
+                num_results: 5,
+                provider: document.getElementById('search-provider').value
+            })
+        });
+
+        const searchData = await searchResponse.json();
+
+        if (searchData.success) {
+            // Add search results as context to the chat
+            const contextMessage = `Based on web search results for "${query}":\n\n${searchData.summary}`;
+
+            // Send to chat with web context
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({
+                    type: 'chat',
+                    message: `${query}\n\nWeb search context:\n${contextMessage}`,
+                    attachment_ids: []
+                }));
+
+                startAssistantMessage();
+            }
+        }
+    } catch (error) {
+        console.error('Error in web search and chat:', error);
+        appendSystemMessage('Error performing web search for chat context');
     }
 }

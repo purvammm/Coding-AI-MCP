@@ -235,6 +235,44 @@
                     </div>
                 </div>
 
+                <!-- Web Search -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-globe"></i> Web Search</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-2">
+                            <input type="text" id="web-search-input" class="form-control"
+                                   placeholder="Search the web...">
+                            <button id="web-search-button" class="btn btn-outline-success" onclick="performWebSearch()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <select id="search-provider" class="form-select form-select-sm">
+                                    <option value="duckduckgo">DuckDuckGo</option>
+                                    <option value="bing">Bing</option>
+                                    <option value="serper">Serper</option>
+                                    <option value="moonshot">Moonshot</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <input type="number" id="search-results-count" class="form-control form-control-sm"
+                                       value="5" min="1" max="20" placeholder="Results">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <input type="url" id="url-scrape-input" class="form-control form-control-sm"
+                                   placeholder="Or enter URL to scrape...">
+                            <button class="btn btn-outline-info btn-sm mt-1 w-100" onclick="scrapeUrl()">
+                                <i class="fas fa-link"></i> Scrape URL
+                            </button>
+                        </div>
+                        <div id="web-search-results" style="max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+
                 <!-- Code Search -->
                 <div class="card mb-3">
                     <div class="card-header">
@@ -276,6 +314,9 @@
                             </button>
                             <button class="btn btn-outline-success btn-sm" onclick="showConversationStats()">
                                 <i class="fas fa-chart-line"></i> Context Stats
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="showWebCacheStats()">
+                                <i class="fas fa-globe"></i> Web Cache
                             </button>
                         </div>
                     </div>
